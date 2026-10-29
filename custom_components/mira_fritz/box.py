@@ -164,9 +164,9 @@ class Box:
                 out[int(part)] = book["NewPhonebookName"]
         return out
 
-    def phonebook(self, names: list[str]) -> list[Contact]:
-        """The contacts of the books named (none named: the first). A name in
-        two books with the same numbers comes once."""
+    def phonebook(self, names: list[str]) -> tuple[list[str], list[Contact]]:
+        """The names of the books read and their contacts (none named: the
+        first book). A name in two books with the same numbers comes once."""
         books = self.phonebooks()
         chosen = [i for i, n in books.items() if n in names] or sorted(books)[:1]
         out: list[Contact] = []
@@ -175,7 +175,7 @@ class Box:
             for contact in parse_phonebook(self._xml(url)):
                 if not any(c.name == contact.name and _same(c.numbers, contact.numbers) for c in out):
                     out.append(contact)
-        return out
+        return [books[i] for i in chosen], out
 
     # --- Answering machines -------------------------------------------------------------------------------
 

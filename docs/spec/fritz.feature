@@ -35,6 +35,7 @@ Feature: FZ Mira FRITZ!Box
     And the option names only "Telefonbuch"
     When get_phonebook is called
     Then the response holds the contacts of "Telefonbuch" with their numbers, types and main number
+    And the name of the book read and the box's address
 
   @step1
   Scenario: FZ-11 A contact in two books comes once

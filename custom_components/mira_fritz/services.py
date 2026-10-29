@@ -120,8 +120,12 @@ def async_register_services(hass: HomeAssistant) -> None:
     async def get_phonebook(call: ServiceCall) -> ServiceResponse:
         c = _coordinator(hass, call)
         books = c.config_entry.options.get(CONF_PHONEBOOKS, [])
-        contacts = await _box_call(hass.async_add_executor_job(c.box.phonebook, books))
-        return {"contacts": [{"name": x.name, "numbers": x.numbers} for x in contacts]}
+        read, contacts = await _box_call(hass.async_add_executor_job(c.box.phonebook, books))
+        return {
+            "books": read,
+            "url": f"http://{c.box.host}",
+            "contacts": [{"name": x.name, "numbers": x.numbers} for x in contacts],
+        }
 
     for name, handler, schema, response in (
         ("get_messages", get_messages, {**_ENTRY, vol.Optional("new_only", default=False): cv.boolean}, SupportsResponse.ONLY),

@@ -26,6 +26,7 @@ async def test_FZ10_get_phonebook_gives_the_chosen_books(hass, box, entry):
     response = await hass.services.async_call(DOMAIN, "get_phonebook", {}, blocking=True, return_response=True)
     names = [c["name"] for c in response["contacts"]]
     assert names == ["Oma Erika", "Fax"]
+    assert response["books"] == ["Telefonbuch"] and response["url"] == "http://192.168.178.1"
     assert response["contacts"][0]["numbers"][0] == {"number": "0301234", "type": "home", "main": True}
 
 

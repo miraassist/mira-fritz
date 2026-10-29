@@ -50,7 +50,7 @@ class FakeBox:
             for c in self.books[i][1]:
                 if not any(o.name == c.name and o.numbers == c.numbers for o in out):
                     out.append(c)
-        return out
+        return [self.books[i][0] for i in chosen], out
 
     def messages(self):
         return list(self.msgs)

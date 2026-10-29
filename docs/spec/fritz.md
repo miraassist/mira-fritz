@@ -97,7 +97,7 @@ is.
 | `mira_fritz.delete_messages` | `message_ids` | – |
 | `mira_fritz.get_calls` | `kind` (missed, incoming, outgoing; empty: all), `new_only` | calls: kind, name, number, date, duration, `message_id` |
 | `mira_fritz.mark_calls_seen` | – | – |
-| `mira_fritz.get_phonebook` | – | contacts: name, numbers (number, type, main) of the chosen books |
+| `mira_fritz.get_phonebook` | – | books: the names read; url: the box's page; contacts: name, numbers (number, type, main) |
 
 - A message id is `<tam>:<index>` as the box numbers them; it is valid until the message is deleted.
 - `get_phonebook` gives the whole chosen books; finding a name stays with whoever asks (Mira: `phone_call`). Fax
