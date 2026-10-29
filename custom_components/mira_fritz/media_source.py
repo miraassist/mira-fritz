@@ -47,7 +47,7 @@ def _coordinator(hass: HomeAssistant, entry_id: str) -> FritzCoordinator | None:
 def _title(coordinator: FritzCoordinator, m: Message) -> str:
     date = coordinator.local(m.date)
     when = date.strftime("%d.%m. %H:%M") if date else ""
-    return f"{coordinator.name_of(m.name)} – {when} ({m.duration})"
+    return f"{coordinator.name_of(m.name)} – {when} ({max(m.minutes, 1)} min)"
 
 
 class FritzMediaSource(MediaSource):

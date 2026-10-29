@@ -16,12 +16,12 @@ from custom_components.mira_fritz.const import DOMAIN
 HOST = "192.168.178.1"
 
 
-def message(index, name="Oma", new=True, date="2026-10-29 14:12", tam=0, number="0301234"):
-    return Message(tam, index, name, number, datetime.fromisoformat(date), "0:23", new, f"/download.lua?path=/rec.{index}")
+def message(index, name="Oma", new=True, date="2026-10-29 14:12", tam=0, number="0301234", machine="Privat"):
+    return Message(tam, index, name, number, datetime.fromisoformat(date), 1, new, f"/download.lua?path=/rec.{index}", machine)
 
 
 def call(id_, kind="missed", name="Ben", date="2026-10-29 16:40", path="", number="0175999"):
-    return Call(id_, kind, name, number, datetime.fromisoformat(date), "0:00", path)
+    return Call(id_, kind, name, number, datetime.fromisoformat(date), 0, path)
 
 
 class FakeBox:

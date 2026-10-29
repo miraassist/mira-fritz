@@ -32,7 +32,7 @@ class NewMessages(FritzEntity, SensorEntity):
         c = self.coordinator
         return {
             "messages": [
-                {"name": c.name_of(m.name), "date": _iso(c.local(m.date)), "duration": m.duration}
+                {"name": c.name_of(m.name), "date": _iso(c.local(m.date)), "minutes": m.minutes}
                 for m in c.new_messages
             ]
         }

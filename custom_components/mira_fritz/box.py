@@ -7,7 +7,7 @@ time zone; the coordinator places them.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Any
 from urllib.parse import parse_qs, urlparse
@@ -57,9 +57,11 @@ class Message:
     name: str
     number: str
     date: datetime | None
-    duration: str
+    minutes: int
     new: bool
     path: str
+    # The answering machine's name, as set on the box ("Büro").
+    machine: str = ""
 
     @property
     def id(self) -> str:
@@ -76,7 +78,7 @@ class Call:
     name: str
     number: str
     date: datetime | None
-    duration: str
+    minutes: int
     path: str
 
 
@@ -99,6 +101,15 @@ def _date(text: str | None) -> datetime | None:
         return datetime.strptime(text or "", "%d.%m.%y %H:%M")
     except ValueError:
         return None
+
+
+def _minutes(text: str | None) -> int:
+    """A duration as the box gives it, hours:minutes ("0:01" is a minute)."""
+    hours, _, minutes = (text or "").partition(":")
+    try:
+        return int(hours or 0) * 60 + int(minutes or 0)
+    except ValueError:
+        return 0
 
 
 def _text(node: ET.Element, tag: str) -> str:
@@ -179,17 +190,17 @@ class Box:
 
     # --- Answering machines -------------------------------------------------------------------------------
 
-    def tams(self) -> list[int]:
-        """The answering machines set up on the box."""
+    def tams(self) -> dict[int, str]:
+        """The answering machines set up on the box, with their names."""
         listing = self._call("calls", TAM, "GetList")["NewTAMList"]
         root = ET.fromstring(listing)
-        return [int(_text(i, "Index")) for i in root.iter("Item") if _text(i, "Display") == "1"]
+        return {int(_text(i, "Index")): _text(i, "Name") for i in root.iter("Item") if _text(i, "Display") == "1"}
 
     def messages(self) -> list[Message]:
         out: list[Message] = []
-        for tam in self.tams():
+        for tam, name in self.tams().items():
             url = self._call("calls", TAM, "GetMessageList", NewIndex=tam)["NewURL"]
-            out += parse_messages(self._xml(url), tam)
+            out += [replace(m, machine=name) for m in parse_messages(self._xml(url), tam)]
         return out
 
     def mark_heard(self, tam: int, index: int) -> None:
@@ -251,7 +262,7 @@ def parse_messages(root: ET.Element, tam: int) -> list[Message]:
             name=_text(m, "Name"),
             number=_text(m, "Number"),
             date=_date(m.findtext("Date")),
-            duration=_text(m, "Duration"),
+            minutes=_minutes(m.findtext("Duration")),
             new=_text(m, "New") == "1",
             path=_text(m, "Path"),
         )
@@ -273,7 +284,7 @@ def parse_calls(root: ET.Element) -> list[Call]:
                 name=_text(c, "Name"),
                 number=_text(c, "Called" if outgoing else "Caller"),
                 date=_date(c.findtext("Date")),
-                duration=_text(c, "Duration"),
+                minutes=_minutes(c.findtext("Duration")),
                 path=_text(c, "Path"),
             )
         )

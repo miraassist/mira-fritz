@@ -66,10 +66,11 @@ def async_register_services(hass: HomeAssistant) -> None:
                 {
                     "id": m.id,
                     "answering_machine": m.tam,
+                    "answering_machine_name": m.machine,
                     "name": c.name_of(m.name),
                     "number": m.number,
                     "date": _iso(c.local(m.date)),
-                    "duration": m.duration,
+                    "minutes": m.minutes,
                     "new": m.new,
                     "media_content_id": media_content_id(c.config_entry.entry_id, m),
                 }
@@ -108,7 +109,7 @@ def async_register_services(hass: HomeAssistant) -> None:
                     "name": c.name_of(x.name),
                     "number": x.number,
                     "date": _iso(c.local(x.date)),
-                    "duration": x.duration,
+                    "minutes": x.minutes,
                     "message_id": message.id if message else None,
                 }
             )

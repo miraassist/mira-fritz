@@ -47,9 +47,10 @@ her own.
 Every 60 seconds, two calls:
 
 - **Messages** (`X_AVM-DE_TAM`: `GetList`, then `GetMessageList` per answering machine): index, answering machine,
-  name (from the box's phone book), number, date, duration, `new`, the path of the recording.
+  name (from the box's phone book), number, date, length in minutes (the box gives hours:minutes, so "0:01" is a
+  minute, tried 2026-10-29), `new`, the path of the recording.
 - **Calls** (`X_AVM-DE_OnTel`: `GetCallList`, `days=7`): type (incoming, missed, outgoing, refused), name, number,
-  date, duration, and the path of a recording when the answering machine took the call.
+  date, length in minutes, and the path of a recording when the answering machine took the call.
 
 A call the answering machine took is a **message**, not a missed call: the call list has it as incoming, with the
 path of a recording, and the message has the same number and minute. A **missed call** is one of type missed without a
@@ -67,7 +68,7 @@ message's path. The web port refuses them (tried 2026-10-29).
 
 | Entity | State | Attributes |
 |---|---|---|
-| `sensor.<box>_new_messages` | number of messages not heard | `messages`: name, date, duration per new message |
+| `sensor.<box>_new_messages` | number of messages not heard | `messages`: name, date, minutes per new message |
 | `sensor.<box>_missed_calls` | number of missed calls after "seen up to" | `calls`: name, date per new missed call |
 | `event.<box>_calls` | the last event | event types `new_message`, `missed_call`, each with name and date |
 
@@ -81,7 +82,7 @@ message's path. The web port refuses them (tried 2026-10-29).
 ## Media source
 
 - `media-source://mira_fritz/<entry>/<tam>/<index>`: one message, playable on every media player, a satellite too.
-  Browsable: per answering machine, newest first, titled "Oma – heute 14:12 (0:23)".
+  Browsable: per answering machine, newest first, titled "Oma – 29.10. 14:12 (1 min)".
 - Resolving gives a signed URL of the integration's HTTP view, so a device without a login can fetch it. The view
   fetches the recording from the box at that moment (WAV, as the box keeps it); nothing is stored.
 
@@ -92,10 +93,10 @@ is.
 
 | Action | Data | Response |
 |---|---|---|
-| `mira_fritz.get_messages` | `new_only` (default false) | messages: id, answering machine, name, number, date, duration, new, `media_content_id` |
+| `mira_fritz.get_messages` | `new_only` (default false) | messages: id, answering machine (its number and its name), name, number, date, minutes, new, `media_content_id` |
 | `mira_fritz.mark_heard` | `message_ids` (empty: all) | – |
 | `mira_fritz.delete_messages` | `message_ids` | – |
-| `mira_fritz.get_calls` | `kind` (missed, incoming, outgoing; empty: all), `new_only` | calls: kind, name, number, date, duration, `message_id` |
+| `mira_fritz.get_calls` | `kind` (missed, incoming, outgoing; empty: all), `new_only` | calls: kind, name, number, date, minutes, `message_id` |
 | `mira_fritz.mark_calls_seen` | – | – |
 | `mira_fritz.get_phonebook` | – | books: the names read; url: the box's page; contacts: name, numbers (number, type, main) |
 

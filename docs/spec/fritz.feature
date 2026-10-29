@@ -50,7 +50,7 @@ Feature: FZ Mira FRITZ!Box
     Given two new messages and one heard on the answering machine
     When the integration reads
     Then sensor new_messages is 2
-    And its attributes name caller, date and duration, never a number
+    And its attributes name caller, date and minutes, never a number
 
   @step2
   Scenario: FZ-21 mark_heard marks at the box
@@ -63,7 +63,7 @@ Feature: FZ Mira FRITZ!Box
   Scenario: FZ-22 get_messages gives what a player needs
     Given a new message from Oma
     When get_messages is called
-    Then the response holds its id, name, number, date, duration and media_content_id
+    Then the response holds its id, the answering machine's name, name, number, date, minutes and media_content_id
 
   @step2
   Scenario: FZ-23 What is there at the start fires no event
@@ -84,7 +84,7 @@ Feature: FZ Mira FRITZ!Box
   Scenario: FZ-31 The browser lists messages newest first
     Given three messages
     When the media source is browsed
-    Then they come newest first, titled with name, day, time and duration
+    Then they come newest first, titled with name, day, time and minutes
 
   # --- Calls ----------------------------------------------------------------------------------------------
 

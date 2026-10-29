@@ -20,7 +20,8 @@ SENSOR = "sensor.fritz_box_new_messages"
 
 async def test_FZ20_new_messages_are_counted_without_numbers(hass, box, entry):
     parsed = parse_messages(ET.fromstring(XML), 0)
-    assert parsed[0].id == "0:3" and parsed[0].new and parsed[0].number == "0301234"
+    # The box gives hours:minutes: "0:01" is a minute.
+    assert parsed[0].id == "0:3" and parsed[0].new and parsed[0].number == "0301234" and parsed[0].minutes == 1
     box.msgs = [message(1), message(2, name="Ben"), message(3, new=False)]
     await setup(hass, entry)
     state = hass.states.get(SENSOR)
@@ -42,7 +43,8 @@ async def test_FZ22_get_messages_gives_what_a_player_needs(hass, box, entry):
     await setup(hass, entry)
     response = await hass.services.async_call(DOMAIN, "get_messages", {}, blocking=True, return_response=True)
     m = response["messages"][0]
-    assert m["id"] == "0:1" and m["name"] == "Oma" and m["number"] == "0301234" and m["duration"] == "0:23"
+    assert m["answering_machine_name"] == "Privat"
+    assert m["id"] == "0:1" and m["name"] == "Oma" and m["number"] == "0301234" and m["minutes"] == 1
     assert m["date"].startswith("2026-10-29T14:12")
     assert m["media_content_id"] == f"media-source://{DOMAIN}/{entry.entry_id}/0/1"
 
@@ -82,7 +84,7 @@ async def test_FZ31_the_browser_lists_messages_newest_first(hass, box, entry):
     await setup(hass, entry)
     browsed = await async_browse_media(hass, f"media-source://{DOMAIN}")
     assert [c.title for c in browsed.children] == [
-        "Ben – 29.10. 16:00 (0:23)",
-        "unknown – 28.10. 12:30 (0:23)",
-        "Oma – 27.10. 09:00 (0:23)",
+        "Ben – 29.10. 16:00 (1 min)",
+        "unknown – 28.10. 12:30 (1 min)",
+        "Oma – 27.10. 09:00 (1 min)",
     ]
