@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.env
+secrets.json
+
+# Private notes, not for the repo
+*.local.md
+CLAUDE.local.md
