@@ -1,6 +1,6 @@
 # Mira FRITZ!Box – Spec
 
-Status 2026-10-29: steps 1 to 3 built in the integration and read against a real FRITZ!Box (phone books, messages, a recording, the call list); Mira's side and the release are next. Scenarios: [fritz.feature](fritz.feature).
+Status 2026-10-30: steps 1 to 3 and 5 built in the integration and read against a real FRITZ!Box (phone books, messages, a recording, the call list); Mira's side and the release are next. Scenarios: [fritz.feature](fritz.feature).
 
 ## Goal
 
@@ -116,6 +116,26 @@ Mira's side is specified in Mira's repository; in short:
   Nachrichten?" from `get_messages`; playing by `media_player.play_media` with the message's `media_content_id` at
   the satellite being spoken at; `mark_heard` after playing; `get_calls` and `mark_calls_seen` for missed calls.
 
+## Told, not asked: the call monitor (step 5)
+
+Decided 2026-10-30 (Mira's review, C14): asking the box every minute is the last resort; the box can tell.
+
+- **The call monitor** (TCP port 1012 of the box, switched on by dialling `#96*5*` on a phone at the box) sends a line
+  for every call: `RING` (an incoming call rings), `CALL` (an outgoing one), `CONNECT` (taken, by a phone or the
+  answering machine), `DISCONNECT` (ended). It carries numbers; the integration logs none of it.
+- **After an incoming call ends** (`DISCONNECT` of a call that came in with `RING`), the integration reads the box
+  at once. Tried 2026-10-30 with a real box: a missed call is `RING`, `DISCONNECT` (length 0) and is in the call list
+  at once; a call the answering machine took is `RING`, `CONNECT` on extension 41 (the machines are 40 to 49),
+  `DISCONNECT`, and its message is **not** there at once but 2 seconds later (the box saves the recording after the
+  line; at once the call list has the call without its recording).
+- **Only after the answering machine** the box is read again, after 2, 3 and 5 seconds, until the new message is
+  there. That is asking, the last resort: nothing tells when the recording is saved. A missed call needs none.
+- **Asking stays as a safety net**, every 15 minutes, for what the monitor does not report: a message heard or deleted
+  at a phone or at the box, an answering machine switched on or off. Without the monitor (not switched on, not
+  reachable) the integration asks every 60 seconds as before, and connects again when the box is back.
+- **Setting up** says when the monitor is off and how to switch it on (the next click: "an einem Telefon an der
+  FRITZ!Box #96*5* wählen"); it works without it.
+
 ## Steps
 
 1. **Repository and setup**: config flow, device, options, `get_phonebook` (built); Mira's `telefon` switches over.
@@ -123,11 +143,11 @@ Mira's side is specified in Mira's repository; in short:
    `delete_messages` (built).
 3. **Calls**: `sensor.<box>_missed_calls`, "seen up to", `get_calls`, `mark_calls_seen`, `event.<box>_calls` (built).
 4. **Release** through HACS; the guide's section in Mira.
+5. **The call monitor**: told after a call instead of asking every minute; asking as a safety net (built).
 
 ## Open
 
 - **Mira at the satellite**: whether missed calls and messages show differently (two counts on the screen, two
   colours on the ring) or as one "something new"; and whether Mira only plays a message or may also sum it up
   (that needs the recording sent to a model: a stranger's voice to Google, or local speech recognition).
-- **Real time**: the call monitor (port 1012) would say a missed call at once instead of within 60 seconds; for an
-  answering machine 60 seconds are enough, so not for now.
+- **Real time**: now step 5.

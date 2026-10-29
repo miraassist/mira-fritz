@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field, replace
 from datetime import datetime
 import logging
@@ -15,7 +16,17 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 
 from .box import Box, Call, CannotConnect, LoginRefused, Message, MissingRight
-from .const import CALL_DAYS, DOMAIN, EVENT_MISSED_CALL, EVENT_NEW_MESSAGE, SCAN_INTERVAL, UNKNOWN, UNKNOWN_DEFAULT
+from .const import (
+    CALL_DAYS,
+    DOMAIN,
+    EVENT_MISSED_CALL,
+    EVENT_NEW_MESSAGE,
+    SAFETY_INTERVAL,
+    SCAN_INTERVAL,
+    TAM_SAVED,
+    UNKNOWN,
+    UNKNOWN_DEFAULT,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,6 +56,31 @@ class FritzCoordinator(DataUpdateCoordinator[FritzData]):
         self._known: set[str] | None = None
         # The events of the last read: (event type, data).
         self.fresh: list[tuple[str, dict[str, Any]]] = []
+
+    def monitor_connected(self, connected: bool) -> None:
+        """The call monitor came or went: while it tells, asking is only a
+        safety net."""
+        interval = SAFETY_INTERVAL if connected else SCAN_INTERVAL
+        if self.update_interval != interval:
+            self.update_interval = interval
+            _LOGGER.info("asking the FRITZ!Box every %s", interval)
+
+    def call_ended(self, tam: bool) -> None:
+        """An incoming call ended: read the box now."""
+        self.hass.async_create_task(self._read_after_call(tam))
+
+    async def _read_after_call(self, tam: bool) -> None:
+        before = {m.id for m in self.data.messages} if self.data else set()
+        await self.async_refresh()
+        # An answering machine saves its recording a moment after the call
+        # ended (tried 2026-10-30: not there at once, there after 2 seconds),
+        # and the monitor says nothing then: read again until it is there.
+        # The last resort, as no signal comes.
+        for delay in TAM_SAVED if tam else ():
+            if self.data and {m.id for m in self.data.messages} - before:
+                return
+            await asyncio.sleep(delay)
+            await self.async_refresh()
 
     async def async_load(self) -> None:
         stored = await self._store.async_load() or {}
@@ -104,11 +140,13 @@ class FritzCoordinator(DataUpdateCoordinator[FritzData]):
         )
 
     async def async_delete(self, messages: list[Message]) -> None:
-        for m in messages:
+        # The box numbers a machine's messages anew after a delete: the
+        # highest first, so the others keep their numbers meanwhile. Then the
+        # list is read again, since every id after a deleted one changed.
+        for m in sorted(messages, key=lambda m: (m.tam, m.index), reverse=True):
             await self.hass.async_add_executor_job(self.box.delete, m.tam, m.index)
-        gone = {m.id for m in messages}
         self.fresh = []
-        self.async_set_updated_data(replace(self.data, messages=[m for m in self.data.messages if m.id not in gone]))
+        await self.async_refresh()
 
     async def async_mark_calls_seen(self) -> None:
         await self._set_seen(max((c.id for c in self.data.calls), default=self.seen_up_to or 0))

@@ -72,6 +72,19 @@ Feature: FZ Mira FRITZ!Box
     Then no event new_message comes
     And a message after that fires one
 
+  @step2
+  Scenario: FZ-24 Deleting several goes from the highest and reads again
+    Given messages 1, 2 and 3 on one answering machine
+    When delete_messages is called with 1 and 3
+    Then the box is told to delete 3 first, then 1 (it numbers anew after a delete)
+    And the messages are read again
+
+  @step2
+  Scenario: FZ-25 Errors carry no session id
+    Given the box cannot be reached on an address with the session id
+    When the error is logged
+    Then the session id is not in it
+
   # --- Media source ---------------------------------------------------------------------------------------
 
   @step2
@@ -107,3 +120,24 @@ Feature: FZ Mira FRITZ!Box
     Given the integration has read once
     When a missed call from Ben comes
     Then event calls fires missed_call with name "Ben"
+
+  # --- The call monitor ----------------------------------------------------------------------------------
+
+  @step5
+  Scenario: FZ-50 An incoming call that ended is told
+    Given the call monitor sends RING, CONNECT and DISCONNECT of one call, and an outgoing call
+    When the integration reads the lines
+    Then only the end of the incoming call counts, and no number is kept
+
+  @step5
+  Scenario: FZ-51 The monitor reads after a call and asks only as a safety net
+    Given the call monitor is there
+    When an incoming call ends
+    Then the box is read at once
+    And asking happens every 15 minutes, every minute again once the monitor is gone
+
+  @step5
+  Scenario: FZ-52 After the answering machine it reads until the message is there
+    Given the answering machine took a call (CONNECT on extension 41) and it ended
+    When the box is read at once and the recording is not saved yet
+    Then it is read again after 2, 3 and 5 seconds, until the new message is there

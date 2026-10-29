@@ -70,6 +70,8 @@ async def test_FZ30_a_message_plays_without_a_login(hass, box, entry, hass_clien
     client = await hass_client_no_auth()
     response = await client.get(played.url)
     assert response.status == HTTPStatus.OK and await response.read() == b"RIFF....WAVE"
+    # The path the coordinator knows is used: the list is not read again.
+    assert box.recorded_from == message(1).path
     unsigned = await client.get(played.url.split("?")[0])
     assert unsigned.status == HTTPStatus.UNAUTHORIZED
 
@@ -88,3 +90,20 @@ async def test_FZ31_the_browser_lists_messages_newest_first(hass, box, entry):
         "unknown – 28.10. 12:30 (1 min)",
         "Oma – 27.10. 09:00 (1 min)",
     ]
+
+
+async def test_FZ24_deleting_several_goes_from_the_highest_and_reads_again(hass, box, entry):
+    box.msgs = [message(1), message(2), message(3)]
+    await setup(hass, entry)
+    reads = box.reads
+    await hass.services.async_call(DOMAIN, "delete_messages", {"message_ids": ["0:1", "0:3"]}, blocking=True)
+    # The box numbers anew after a delete: the highest first keeps the others.
+    assert box.deleted == [(0, 3), (0, 1)]
+    assert box.reads == reads + 1
+
+
+def test_FZ25_errors_carry_no_session_id():
+    from custom_components.mira_fritz.box import _clean
+
+    err = OSError("Max retries exceeded with url: /download.lua?path=/data/tam/rec/rec.0.003&sid=1a2b3c4d5e6f7a8b")
+    assert "1a2b3c4d5e6f7a8b" not in _clean(err) and "sid=…" in _clean(err)

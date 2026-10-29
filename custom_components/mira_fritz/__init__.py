@@ -9,6 +9,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .box import Box
+from .callmonitor import CallMonitor
 from .const import DOMAIN
 from .coordinator import FritzConfigEntry, FritzCoordinator
 from .media_source import MessageView
@@ -31,8 +32,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: FritzConfigEntry) -> boo
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    # Told after a call instead of asking every minute (fritz.md).
+    monitor = CallMonitor(entry.data[CONF_HOST], coordinator.monitor_connected, coordinator.call_ended)
+    monitor.start(hass)
+    entry.async_on_unload(monitor.stop)
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: FritzConfigEntry) -> bool:
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unloaded:
+        await hass.async_add_executor_job(entry.runtime_data.box.close)
+    return unloaded

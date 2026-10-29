@@ -142,7 +142,9 @@ class MessageView(HomeAssistantView):
         if coordinator is None or not tam.isdigit() or not index.isdigit():
             raise web.HTTPNotFound
         try:
-            body = await self.hass.async_add_executor_job(coordinator.box.recording, int(tam), int(index))
+            known = coordinator.message(f"{tam}:{index}")
+            path = known.path if known else ""
+            body = await self.hass.async_add_executor_job(coordinator.box.recording, int(tam), int(index), path)
         except KeyError as err:
             raise web.HTTPNotFound from err
         except (CannotConnect, LoginRefused, MissingRight) as err:

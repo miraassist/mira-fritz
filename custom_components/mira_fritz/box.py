@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from datetime import datetime
+import re
+import threading
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 import xml.etree.ElementTree as ET
@@ -124,6 +126,16 @@ class Box:
         self.user = user
         self.password = password
         self._fc: FritzConnection | None = None
+        # One request at a time: the refresh, the actions and the recording
+        # view share one connection, and its session is not made for threads.
+        self._lock = threading.RLock()
+
+    def close(self) -> None:
+        """Lets go of the connection (unload)."""
+        with self._lock:
+            if self._fc is not None:
+                self._fc.session.close()
+                self._fc = None
 
     def _conn(self) -> FritzConnection:
         if self._fc is None:
@@ -131,30 +143,30 @@ class Box:
                 self._fc = FritzConnection(
                     address=self.host, user=self.user, password=self.password, timeout=TIMEOUT
                 )
-            except FritzConnectionException as err:
-                raise CannotConnect(str(err)) from err
-            except OSError as err:
-                raise CannotConnect(str(err)) from err
+            except (FritzConnectionException, OSError) as err:
+                raise CannotConnect(_clean(err)) from err
         return self._fc
 
     def _call(self, right: str, service: str, action: str, **arguments: Any) -> dict[str, Any]:
-        try:
-            return self._conn().call_action(service, action, arguments=arguments or None)
-        except FritzAuthorizationError as err:
-            raise LoginRefused(str(err)) from err
-        except (FritzSecurityError, FritzActionError, FritzServiceError) as err:
-            raise MissingRight(right) from err
-        except FritzConnectionException as err:
-            raise CannotConnect(str(err)) from err
-        except OSError as err:
-            self._fc = None
-            raise CannotConnect(str(err)) from err
+        with self._lock:
+            try:
+                return self._conn().call_action(service, action, arguments=arguments or None)
+            except FritzAuthorizationError as err:
+                raise LoginRefused(_clean(err)) from err
+            except (FritzSecurityError, FritzActionError, FritzServiceError) as err:
+                raise MissingRight(right) from err
+            except FritzConnectionException as err:
+                raise CannotConnect(_clean(err)) from err
+            except OSError as err:
+                self._fc = None
+                raise CannotConnect(_clean(err)) from err
 
     def _xml(self, url: str) -> ET.Element:
-        try:
-            return get_xml_root(url, timeout=TIMEOUT, session=self._conn().session)
-        except (FritzConnectionException, OSError) as err:
-            raise CannotConnect(str(err)) from err
+        with self._lock:
+            try:
+                return get_xml_root(url, timeout=TIMEOUT, session=self._conn().session)
+            except (FritzConnectionException, OSError) as err:
+                raise CannotConnect(_clean(err)) from err
 
     def check(self) -> None:
         """Log in and read once what the integration needs: raises
@@ -165,28 +177,32 @@ class Box:
 
     # --- Phone book ---------------------------------------------------------------------------------------
 
-    def phonebooks(self) -> dict[int, str]:
-        """The box's phone books by id, with their names."""
+    def _books(self) -> dict[int, tuple[str, str]]:
+        """The box's phone books by id: name and the address of its XML, as
+        one GetPhonebook gives both."""
         ids = self._call("phone", ON_TEL, "GetPhonebookList")["NewPhonebookList"]
         out = {}
         for part in str(ids).split(","):
             if part.strip().isdigit():
                 book = self._call("phone", ON_TEL, "GetPhonebook", NewPhonebookID=int(part))
-                out[int(part)] = book["NewPhonebookName"]
+                out[int(part)] = (book["NewPhonebookName"], book["NewPhonebookURL"])
         return out
+
+    def phonebooks(self) -> dict[int, str]:
+        """The box's phone books by id, with their names."""
+        return {i: name for i, (name, _) in self._books().items()}
 
     def phonebook(self, names: list[str]) -> tuple[list[str], list[Contact]]:
         """The names of the books read and their contacts (none named: the
         first book). A name in two books with the same numbers comes once."""
-        books = self.phonebooks()
-        chosen = [i for i, n in books.items() if n in names] or sorted(books)[:1]
+        books = self._books()
+        chosen = [i for i, (n, _) in books.items() if n in names] or sorted(books)[:1]
         out: list[Contact] = []
         for book_id in chosen:
-            url = self._call("phone", ON_TEL, "GetPhonebook", NewPhonebookID=book_id)["NewPhonebookURL"]
-            for contact in parse_phonebook(self._xml(url)):
+            for contact in parse_phonebook(self._xml(books[book_id][1])):
                 if not any(c.name == contact.name and _same(c.numbers, contact.numbers) for c in out):
                     out.append(contact)
-        return [books[i] for i in chosen], out
+        return [books[i][0] for i in chosen], out
 
     # --- Answering machines -------------------------------------------------------------------------------
 
@@ -209,31 +225,42 @@ class Box:
     def delete(self, tam: int, index: int) -> None:
         self._call("calls", TAM, "DeleteMessage", NewIndex=tam, NewMessageIndex=index)
 
-    def recording(self, tam: int, index: int) -> bytes:
+    def recording(self, tam: int, index: int, path: str = "") -> bytes:
         """A message's recording as the box keeps it (WAV). It is fetched
         where the message list is, on the TR-064 port with the list's
-        session id; the web port refuses it (tried 2026-10-29)."""
+        session id; the web port refuses it (tried 2026-10-29). With the
+        message's path known (the coordinator has it), the list itself is
+        not read again: only the session id is asked for."""
         url = self._call("calls", TAM, "GetMessageList", NewIndex=tam)["NewURL"]
         parts = urlparse(url)
         sid = parse_qs(parts.query).get("sid", [""])[0]
-        message = next((m for m in parse_messages(self._xml(url), tam) if m.index == index), None)
-        if message is None or not message.path:
-            raise KeyError(f"{tam}:{index}")
-        conn = self._conn()
-        try:
-            response = conn.session.get(
-                f"{parts.scheme}://{parts.netloc}{message.path}&sid={sid}", timeout=TIMEOUT
-            )
-            response.raise_for_status()
-        except OSError as err:
-            raise CannotConnect(str(err)) from err
-        return response.content
+        if not path:
+            message = next((m for m in parse_messages(self._xml(url), tam) if m.index == index), None)
+            if message is None or not message.path:
+                raise KeyError(f"{tam}:{index}")
+            path = message.path
+        with self._lock:
+            try:
+                response = self._conn().session.get(f"{parts.scheme}://{parts.netloc}{path}&sid={sid}", timeout=TIMEOUT)
+                response.raise_for_status()
+            except OSError as err:
+                raise CannotConnect(_clean(err)) from err
+            return response.content
 
     # --- Calls --------------------------------------------------------------------------------------------
 
     def calls(self, days: int) -> list[Call]:
         url = self._call("calls", ON_TEL, "GetCallList")["NewCallListURL"]
         return parse_calls(self._xml(f"{url}&days={days}"))
+
+
+_SID = re.compile(r"sid=[0-9a-fA-F]+")
+
+
+def _clean(err: BaseException) -> str:
+    """An error's text without the box's session id, which its addresses
+    carry: errors end up in Home Assistant's log."""
+    return _SID.sub("sid=…", str(err))
 
 
 def parse_phonebook(root: ET.Element) -> list[Contact]:

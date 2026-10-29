@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # The steps of each feature (its scenario prefix) that are built.
 BUILT_STEPS: dict[str, set[int]] = {
-    "FZ": {1, 2, 3},  # docs/spec/fritz.md, Steps
+    "FZ": {1, 2, 3, 5},  # docs/spec/fritz.md, Steps
 }
 
 _TAG = re.compile(r"^\s*@step(\d+)\b")

@@ -35,6 +35,9 @@ class FakeBox:
         self.books = {0: ("Telefonbuch", []), 1: ("Google", [])}
         self.marked: list[tuple[int, int]] = []
         self.deleted: list[tuple[int, int]] = []
+        self.reads = 0
+        self.recorded_from = None
+        self.closed = False
 
     def check(self):
         if self.refuse:
@@ -53,6 +56,7 @@ class FakeBox:
         return [self.books[i][0] for i in chosen], out
 
     def messages(self):
+        self.reads += 1
         return list(self.msgs)
 
     def calls(self, days):
@@ -64,15 +68,36 @@ class FakeBox:
     def delete(self, tam, index):
         self.deleted.append((tam, index))
 
-    def recording(self, tam, index):
+    def recording(self, tam, index, path=""):
         if not any(m.tam == tam and m.index == index for m in self.msgs):
             raise KeyError(index)
+        self.recorded_from = path
         return b"RIFF....WAVE"
+
+    def close(self):
+        self.closed = True
 
 
 @pytest.fixture(autouse=True)
 def custom(enable_custom_integrations):
     yield
+
+
+class FakeMonitor:
+    """The box's call monitor: the test says when it is there and when a
+    call ended."""
+
+    last: FakeMonitor | None = None
+
+    def __init__(self, host, connected, call_ended):
+        self.connected, self.call_ended = connected, call_ended
+        FakeMonitor.last = self
+
+    def start(self, hass):
+        pass
+
+    async def stop(self):
+        pass
 
 
 @pytest.fixture
@@ -82,6 +107,7 @@ def box():
     with (
         patch("custom_components.mira_fritz.Box", lambda *a: fake),
         patch("custom_components.mira_fritz.config_flow.Box", lambda *a: fake),
+        patch("custom_components.mira_fritz.CallMonitor", FakeMonitor),
     ):
         yield fake
 
