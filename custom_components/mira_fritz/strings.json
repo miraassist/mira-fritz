@@ -1,0 +1,175 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "FRITZ!Box",
+        "description": "Create a user of its own for Home Assistant in the FRITZ!Box (FRITZ!Box → System → FRITZ!Box Users) and tick two rights there: “Telephony” and “Voice messages, fax messages, FRITZ!App Fon and call list”.",
+        "data": {
+          "host": "Address",
+          "username": "User",
+          "password": "Password"
+        },
+        "data_description": {
+          "host": "This is the factory setting. Change it only if your FRITZ!Box has another address."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No FRITZ!Box answers at this address.",
+      "invalid_auth": "User or password is wrong.",
+      "missing_right_phone": "The user lacks the right “Telephony”. Tick it in the FRITZ!Box under System → FRITZ!Box Users.",
+      "missing_right_calls": "The user lacks the right “Voice messages, fax messages, FRITZ!App Fon and call list”. Tick it in the FRITZ!Box under System → FRITZ!Box Users."
+    },
+    "abort": {
+      "already_configured": "This FRITZ!Box is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Phone books",
+        "data": {
+          "phonebooks": "Phone books"
+        },
+        "data_description": {
+          "phonebooks": "Which of the FRITZ!Box's phone books names are looked up in."
+        }
+      }
+    },
+    "abort": {
+      "cannot_connect": "The FRITZ!Box does not answer right now."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "new_messages": {
+        "name": "New messages"
+      },
+      "missed_calls": {
+        "name": "Missed calls"
+      }
+    },
+    "event": {
+      "calls": {
+        "name": "Calls",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "new_message": "New message",
+              "missed_call": "Missed call"
+            }
+          }
+        }
+      }
+    }
+  },
+  "selector": {
+    "kind": {
+      "options": {
+        "missed": "Missed",
+        "incoming": "Incoming",
+        "outgoing": "Outgoing",
+        "refused": "Refused"
+      }
+    }
+  },
+  "services": {
+    "get_messages": {
+      "name": "Get messages",
+      "description": "The answering machines' messages, newest first.",
+      "fields": {
+        "config_entry_id": {
+          "name": "FRITZ!Box",
+          "description": "Only needed when there is more than one FRITZ!Box."
+        },
+        "new_only": {
+          "name": "Only new",
+          "description": "Only what has not been heard or seen yet."
+        }
+      }
+    },
+    "mark_heard": {
+      "name": "Mark as heard",
+      "description": "Marks messages as heard in the FRITZ!Box.",
+      "fields": {
+        "config_entry_id": {
+          "name": "FRITZ!Box",
+          "description": "Only needed when there is more than one FRITZ!Box."
+        },
+        "message_ids": {
+          "name": "Messages",
+          "description": "The ids from “Get messages”. Empty: all."
+        }
+      }
+    },
+    "delete_messages": {
+      "name": "Delete messages",
+      "description": "Deletes messages in the FRITZ!Box.",
+      "fields": {
+        "config_entry_id": {
+          "name": "FRITZ!Box",
+          "description": "Only needed when there is more than one FRITZ!Box."
+        },
+        "message_ids": {
+          "name": "Messages",
+          "description": "The ids from “Get messages”."
+        }
+      }
+    },
+    "get_calls": {
+      "name": "Get calls",
+      "description": "The calls of the last seven days, newest first.",
+      "fields": {
+        "config_entry_id": {
+          "name": "FRITZ!Box",
+          "description": "Only needed when there is more than one FRITZ!Box."
+        },
+        "kind": {
+          "name": "Kind",
+          "description": "Only calls of this kind."
+        },
+        "new_only": {
+          "name": "Only new",
+          "description": "Only missed calls not seen yet."
+        }
+      }
+    },
+    "mark_calls_seen": {
+      "name": "Mark calls as seen",
+      "description": "The missed calls until now count as seen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "FRITZ!Box",
+          "description": "Only needed when there is more than one FRITZ!Box."
+        }
+      }
+    },
+    "get_phonebook": {
+      "name": "Get phone book",
+      "description": "The contacts of the chosen phone books with their numbers.",
+      "fields": {
+        "config_entry_id": {
+          "name": "FRITZ!Box",
+          "description": "Only needed when there is more than one FRITZ!Box."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_box": {
+      "message": "No FRITZ!Box is set up."
+    },
+    "which_box": {
+      "message": "There are several FRITZ!Boxes; say which one."
+    },
+    "box_failed": {
+      "message": "The FRITZ!Box does not answer right now."
+    },
+    "unknown_message": {
+      "message": "These messages do not exist: {ids}"
+    },
+    "no_ids": {
+      "message": "Which messages? Give their ids."
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "domain": "mira_fritz",
+  "name": "Mira FRITZ!Box",
+  "codeowners": [
+    "@miraassist"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "http",
+    "media_source"
+  ],
+  "documentation": "https://github.com/miraassist/mira-fritz",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/miraassist/mira-fritz/issues",
+  "loggers": [
+    "fritzconnection"
+  ],
+  "requirements": [
+    "fritzconnection>=1.15.1"
+  ],
+  "version": "0.1.0"
+}

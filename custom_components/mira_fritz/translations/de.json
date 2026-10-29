@@ -1,0 +1,175 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "FRITZ!Box",
+        "description": "Lege in der FRITZ!Box einen eigenen Benutzer für Home Assistant an (FRITZ!Box → System → FRITZ!Box-Benutzer) und hake dort zwei Rechte an: „Telefonie“ und „Sprachnachrichten, Faxnachrichten, FRITZ!App Fon und Anrufliste“.",
+        "data": {
+          "host": "Adresse",
+          "username": "Benutzer",
+          "password": "Passwort"
+        },
+        "data_description": {
+          "host": "So ist es ab Werk. Nur ändern, wenn deine FRITZ!Box eine andere Adresse hat."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unter dieser Adresse antwortet keine FRITZ!Box.",
+      "invalid_auth": "Benutzer oder Passwort stimmt nicht.",
+      "missing_right_phone": "Dem Benutzer fehlt das Recht „Telefonie“. Hake es in der FRITZ!Box unter System → FRITZ!Box-Benutzer an.",
+      "missing_right_calls": "Dem Benutzer fehlt das Recht „Sprachnachrichten, Faxnachrichten, FRITZ!App Fon und Anrufliste“. Hake es in der FRITZ!Box unter System → FRITZ!Box-Benutzer an."
+    },
+    "abort": {
+      "already_configured": "Diese FRITZ!Box ist schon eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Telefonbücher",
+        "data": {
+          "phonebooks": "Telefonbücher"
+        },
+        "data_description": {
+          "phonebooks": "Aus welchen Telefonbüchern der FRITZ!Box Namen gesucht werden."
+        }
+      }
+    },
+    "abort": {
+      "cannot_connect": "Die FRITZ!Box antwortet gerade nicht."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "new_messages": {
+        "name": "Neue Nachrichten"
+      },
+      "missed_calls": {
+        "name": "Verpasste Anrufe"
+      }
+    },
+    "event": {
+      "calls": {
+        "name": "Anrufe",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "new_message": "Neue Nachricht",
+              "missed_call": "Verpasster Anruf"
+            }
+          }
+        }
+      }
+    }
+  },
+  "selector": {
+    "kind": {
+      "options": {
+        "missed": "Verpasst",
+        "incoming": "Angenommen",
+        "outgoing": "Ausgehend",
+        "refused": "Abgewiesen"
+      }
+    }
+  },
+  "services": {
+    "get_messages": {
+      "name": "Nachrichten abrufen",
+      "description": "Die Nachrichten der Anrufbeantworter, die neuesten zuerst.",
+      "fields": {
+        "config_entry_id": {
+          "name": "FRITZ!Box",
+          "description": "Nur nötig, wenn es mehrere FRITZ!Boxen gibt."
+        },
+        "new_only": {
+          "name": "Nur neue",
+          "description": "Nur, was noch nicht gehört oder gesehen ist."
+        }
+      }
+    },
+    "mark_heard": {
+      "name": "Als gehört markieren",
+      "description": "Markiert Nachrichten in der FRITZ!Box als gehört.",
+      "fields": {
+        "config_entry_id": {
+          "name": "FRITZ!Box",
+          "description": "Nur nötig, wenn es mehrere FRITZ!Boxen gibt."
+        },
+        "message_ids": {
+          "name": "Nachrichten",
+          "description": "Die IDs aus „Nachrichten abrufen“. Leer: alle."
+        }
+      }
+    },
+    "delete_messages": {
+      "name": "Nachrichten löschen",
+      "description": "Löscht Nachrichten in der FRITZ!Box.",
+      "fields": {
+        "config_entry_id": {
+          "name": "FRITZ!Box",
+          "description": "Nur nötig, wenn es mehrere FRITZ!Boxen gibt."
+        },
+        "message_ids": {
+          "name": "Nachrichten",
+          "description": "Die IDs aus „Nachrichten abrufen“."
+        }
+      }
+    },
+    "get_calls": {
+      "name": "Anrufe abrufen",
+      "description": "Die Anrufe der letzten sieben Tage, die neuesten zuerst.",
+      "fields": {
+        "config_entry_id": {
+          "name": "FRITZ!Box",
+          "description": "Nur nötig, wenn es mehrere FRITZ!Boxen gibt."
+        },
+        "kind": {
+          "name": "Art",
+          "description": "Nur Anrufe dieser Art."
+        },
+        "new_only": {
+          "name": "Nur neue",
+          "description": "Nur verpasste Anrufe, die noch nicht gesehen sind."
+        }
+      }
+    },
+    "mark_calls_seen": {
+      "name": "Anrufe als gesehen markieren",
+      "description": "Die verpassten Anrufe bis jetzt gelten als gesehen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "FRITZ!Box",
+          "description": "Nur nötig, wenn es mehrere FRITZ!Boxen gibt."
+        }
+      }
+    },
+    "get_phonebook": {
+      "name": "Telefonbuch abrufen",
+      "description": "Die Kontakte der gewählten Telefonbücher mit ihren Nummern.",
+      "fields": {
+        "config_entry_id": {
+          "name": "FRITZ!Box",
+          "description": "Nur nötig, wenn es mehrere FRITZ!Boxen gibt."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_box": {
+      "message": "Es ist keine FRITZ!Box eingerichtet."
+    },
+    "which_box": {
+      "message": "Es gibt mehrere FRITZ!Boxen; gib an, welche."
+    },
+    "box_failed": {
+      "message": "Die FRITZ!Box antwortet gerade nicht."
+    },
+    "unknown_message": {
+      "message": "Diese Nachrichten gibt es nicht: {ids}"
+    },
+    "no_ids": {
+      "message": "Welche Nachrichten? Gib ihre IDs an."
+    }
+  }
+}

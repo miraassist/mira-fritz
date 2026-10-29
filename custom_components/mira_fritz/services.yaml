@@ -1,0 +1,62 @@
+get_messages:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: mira_fritz
+    new_only:
+      default: false
+      selector:
+        boolean:
+mark_heard:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: mira_fritz
+    message_ids:
+      selector:
+        text:
+          multiple: true
+delete_messages:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: mira_fritz
+    message_ids:
+      required: true
+      selector:
+        text:
+          multiple: true
+get_calls:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: mira_fritz
+    kind:
+      selector:
+        select:
+          options:
+            - missed
+            - incoming
+            - outgoing
+            - refused
+          translation_key: kind
+    new_only:
+      default: false
+      selector:
+        boolean:
+mark_calls_seen:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: mira_fritz
+get_phonebook:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: mira_fritz

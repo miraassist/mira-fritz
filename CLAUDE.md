@@ -24,7 +24,7 @@ rules are Mira's.
 
 ## Design rules
 
-- **Do not rebuild what Home Assistant offers.** `fritzconnection` at the version core's `fritz` pins; entities,
+- **Do not rebuild what Home Assistant offers.** `fritzconnection`, at least the version core's `fritz` pins; entities,
   events, actions with a response, a media source, as Home Assistant does them.
 - **Convention over configuration; few settings.** A setting for an edge case is not added. A setting lives in one
   place only: the FRITZ!Box's access is here, nowhere in Mira.

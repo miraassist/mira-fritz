@@ -10,7 +10,7 @@ who called.
 It is made for [Mira](https://github.com/miraassist/mira), a voice assistant on Home Assistant, and works without
 her.
 
-**Status:** specified, not built yet ([docs/spec/fritz.md](docs/spec/fritz.md)).
+**Status:** built, not released yet ([docs/spec/fritz.md](docs/spec/fritz.md)).
 
 Not affiliated with AVM. FRITZ!Box is a trademark of AVM GmbH.
 

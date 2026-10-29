@@ -1,6 +1,6 @@
 # Mira FRITZ!Box – Spec
 
-Status 2026-10-29: specified, not built. Scenarios: [fritz.feature](fritz.feature).
+Status 2026-10-29: steps 1 to 3 built in the integration and read against a real FRITZ!Box (phone books, messages, a recording, the call list); Mira's side and the release are next. Scenarios: [fritz.feature](fritz.feature).
 
 ## Goal
 
@@ -51,11 +51,17 @@ Every 60 seconds, two calls:
 - **Calls** (`X_AVM-DE_OnTel`: `GetCallList`, `days=7`): type (incoming, missed, outgoing, refused), name, number,
   date, duration, and the path of a recording when the answering machine took the call.
 
-A call the answering machine took is a **message**, not a missed call: the call list says which (a recording path).
-A **missed call** is one of type missed without a message.
+A call the answering machine took is a **message**, not a missed call: the call list has it as incoming, with the
+path of a recording, and the message has the same number and minute. A **missed call** is one of type missed without a
+recording.
 
 **Seen**: the box marks messages as heard (`MarkMessage`), but has no such mark for missed calls. The integration
-keeps one point in time per FRITZ!Box ("seen up to"), in Home Assistant's storage; missed calls after it are new.
+keeps "seen up to" per FRITZ!Box in Home Assistant's storage: the newest call's id when the missed calls were last
+seen (the box numbers calls upwards; a date has only minutes). Missed calls after it are new. At the first start it is
+the newest call then, so the calls of the last days are not all new at once.
+
+**Recordings** are fetched where the message list is: on the TR-064 port, with the list's session id and the
+message's path. The web port refuses them (tried 2026-10-29).
 
 ## Entities
 
@@ -111,10 +117,10 @@ Mira's side is specified in Mira's repository; in short:
 
 ## Steps
 
-1. **Repository and setup**: config flow, device, options, `get_phonebook`; Mira's `telefon` switches over.
+1. **Repository and setup**: config flow, device, options, `get_phonebook` (built); Mira's `telefon` switches over.
 2. **Messages**: reading, `sensor.<box>_new_messages`, the media source, `get_messages`, `mark_heard`,
-   `delete_messages`.
-3. **Calls**: `sensor.<box>_missed_calls`, "seen up to", `get_calls`, `mark_calls_seen`, `event.<box>_calls`.
+   `delete_messages` (built).
+3. **Calls**: `sensor.<box>_missed_calls`, "seen up to", `get_calls`, `mark_calls_seen`, `event.<box>_calls` (built).
 4. **Release** through HACS; the guide's section in Mira.
 
 ## Open

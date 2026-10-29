@@ -1,5 +1,5 @@
 # Test dependencies of the integration (custom_components/mira_fritz).
 # pytest-homeassistant-custom-component pins the Home Assistant version;
-# fritzconnection is the version core's fritz pins. Bump together.
+# fritzconnection at least the version core's fritz pins (the manifest asks for >=). Bump together.
 pytest-homeassistant-custom-component==0.13.372
 fritzconnection==1.15.1
