@@ -33,6 +33,12 @@ rules are Mira's.
 - **Phone numbers never in states or recorded attributes**; the actions give them.
 - **User-facing texts** (config flow, options, repairs) are for Home Assistant users who are not technical: the next
   click, no terms they do not know.
+- **Push, not polling; filter at the source.** Watch what reports a change (Home Assistant's events and state
+  subscriptions, the box's own signals); never fetch everything to filter it here. Polling only where nothing
+  reports a change, and the spec says why.
+- **Signals, not timing.** A sequence is coordinated by clear signals of state transitions (a state changes, an event
+  comes, a reply arrives), never by computed durations, estimated delays or sleeps. A time is only a safety net, or
+  the very last resort where no signal exists, and then the spec says why.
 - **Keep it understandable**: the simple variant; no elaborate safeguards where the worst case is a nuisance.
 - **Public repository**: no facts of a real setup (addresses, host names, users, paths, secrets), only abstract
   recipes. The FRITZ!Box's factory address is a fact of the product and may appear.
